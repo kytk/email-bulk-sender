@@ -627,9 +627,29 @@ def main():
                     return
 
     # 送信遅延時間の取得
-    delay_from_config = config.get('email_options', {}).get('send_delay', DEFAULT_SEND_DELAY if DEFAULT_SEND_DELAY else 5)
-    if delay_from_config or DEFAULT_SEND_DELAY:
-        send_delay = delay_from_config if delay_from_config else DEFAULT_SEND_DELAY
+    delay_from_config = config.get('email_options', {}).get('send_delay', None)
+    send_delay = None
+
+    # 設定ファイルの値を優先
+    if delay_from_config is not None:
+        try:
+            send_delay = float(delay_from_config)
+        except (ValueError, TypeError):
+            if i18n.get_language() == 'ja':
+                print(f"警告: 設定された送信間隔 '{delay_from_config}' が無効です。")
+            else:
+                print(f"Warning: Configured send_delay '{delay_from_config}' is invalid.")
+            send_delay = None
+
+    # DEFAULT値を使用
+    if send_delay is None and DEFAULT_SEND_DELAY:
+        try:
+            send_delay = float(DEFAULT_SEND_DELAY)
+        except (ValueError, TypeError):
+            send_delay = None
+
+    # 設定済みの値を表示または入力を求める
+    if send_delay is not None:
         if i18n.get_language() == 'ja':
             print(f"送信間隔: {send_delay}秒 (設定済み)")
         else:
