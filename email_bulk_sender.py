@@ -16,6 +16,13 @@ import argparse
 from i18n import get_i18n
 from config import ConfigManager
 
+# Excel対応
+try:
+    from openpyxl import load_workbook
+    EXCEL_SUPPORT = True
+except ImportError:
+    EXCEL_SUPPORT = False
+
 # ==================== 設定セクション ====================
 # ここで送信元情報とSMTPサーバー設定をしてください
 
@@ -80,14 +87,44 @@ class EmailBulkSender:
     
     def read_recipients(self, csv_file, i18n=None):
         """
-        CSVファイルから受信者リストを読み込む（文字コード自動検出）
+        CSVまたはExcelファイルから受信者リストを読み込む（文字コード自動検出）
 
         Args:
-            csv_file: CSVファイルのパス（企業,氏名,メールアドレスの形式）
+            csv_file: CSVまたはExcelファイルのパス（企業,氏名,メールアドレスの形式）
             i18n: 国際化インスタンス
 
         Returns:
             受信者の辞書リスト [{'company': '株式会社ABC', 'name': '山田太郎', 'email': 'yamada@example.com'}, ...]
+        """
+        # ファイル拡張子で判定
+        file_ext = os.path.splitext(csv_file)[1].lower()
+
+        if file_ext == '.xlsx':
+            # Excelファイルの場合
+            if not EXCEL_SUPPORT:
+                error_msg = "Excel file support requires openpyxl. Install it with: pip install openpyxl" if i18n is None else i18n.t("error_excel_support")
+                raise ImportError(error_msg)
+
+            if i18n:
+                print(f"Reading Excel file: {csv_file}")
+            else:
+                print(f"Excelファイルを読み込み中: {csv_file}")
+
+            return self._read_recipients_from_excel(csv_file, i18n)
+        else:
+            # CSVファイルの場合
+            return self._read_recipients_from_csv(csv_file, i18n)
+
+    def _read_recipients_from_csv(self, csv_file, i18n=None):
+        """
+        CSVファイルから受信者リストを読み込む（文字コード自動検出）
+
+        Args:
+            csv_file: CSVファイルのパス
+            i18n: 国際化インスタンス
+
+        Returns:
+            受信者の辞書リスト
         """
         # ファイルの文字コードを自動検出
         with open(csv_file, 'rb') as f:
@@ -101,9 +138,9 @@ class EmailBulkSender:
             else:
                 print(f"CSVファイルの文字コード: {encoding} (信頼度: {confidence:.2%})")
 
-        # 検出された文字コードでファイルを読み込む
+        # 検出された文字コードでファイルを読み込む（newline=''で改行コードを適切に処理）
         recipients = []
-        with open(csv_file, 'r', encoding=encoding) as f:
+        with open(csv_file, 'r', encoding=encoding, newline='') as f:
             reader = csv.DictReader(f)
             for row in reader:
                 # CSVのカラム名に応じて調整
@@ -116,6 +153,54 @@ class EmailBulkSender:
                     'name': row[name_key].strip(),
                     'email': row[email_key].strip()
                 })
+        return recipients
+
+    def _read_recipients_from_excel(self, xlsx_file, i18n=None):
+        """
+        Excelファイルから受信者リストを読み込む
+
+        Args:
+            xlsx_file: Excelファイルのパス
+            i18n: 国際化インスタンス
+
+        Returns:
+            受信者の辞書リスト
+        """
+        workbook = load_workbook(xlsx_file, read_only=True)
+        sheet = workbook.active
+
+        recipients = []
+        rows = list(sheet.iter_rows(values_only=True))
+
+        if len(rows) == 0:
+            return recipients
+
+        # ヘッダー行を取得
+        header = rows[0]
+
+        # カラムインデックスを特定
+        company_key = '企業' if '企業' in header else 'company'
+        name_key = '氏名' if '氏名' in header else 'name'
+        email_key = 'メールアドレス' if 'メールアドレス' in header else 'email'
+
+        try:
+            company_idx = header.index(company_key)
+            name_idx = header.index(name_key)
+            email_idx = header.index(email_key)
+        except ValueError as e:
+            error_msg = f"Required columns not found in Excel file. Expected: {company_key}, {name_key}, {email_key}" if i18n is None else i18n.t("error_excel_columns")
+            raise ValueError(error_msg) from e
+
+        # データ行を読み込む
+        for row in rows[1:]:
+            if row[email_idx]:  # メールアドレスがある行のみ
+                recipients.append({
+                    'company': str(row[company_idx]).strip() if row[company_idx] else '',
+                    'name': str(row[name_idx]).strip() if row[name_idx] else '',
+                    'email': str(row[email_idx]).strip()
+                })
+
+        workbook.close()
         return recipients
     
     def read_email_template(self, template_file, i18n=None):
@@ -388,15 +473,20 @@ def main():
     # 設定ファイル管理を初期化
     config_manager = ConfigManager("email")
 
-    # 設定を読み込む（--load-configフラグまたは既存の設定ファイルがある場合）
+    # 設定を読み込む（--load-configフラグが指定された場合のみ）
     config = None
-    if args.load_config or config_manager.config_exists():
+    if args.load_config:
         config = config_manager.load_config()
         if config:
             if i18n.get_language() == 'ja':
                 print(f"設定ファイルを読み込みました: {config_manager.get_config_path()}\n")
             else:
                 print(f"Loaded config from: {config_manager.get_config_path()}\n")
+        else:
+            if i18n.get_language() == 'ja':
+                print(f"警告: 設定ファイルが見つかりません: {config_manager.get_config_path()}\n")
+            else:
+                print(f"Warning: Config file not found: {config_manager.get_config_path()}\n")
 
     # 設定がない場合はデフォルトを使用
     if not config:
@@ -406,9 +496,9 @@ def main():
     print(i18n.get('cli_title') + "\n")
 
     # SMTPサーバーの取得（設定ファイルまたはデフォルト値から）
-    smtp_server_from_config = config.get('smtp', {}).get('server', DEFAULT_SMTP_SERVER)
-    if smtp_server_from_config:
-        smtp_server = smtp_server_from_config
+    smtp_server_from_config = config.get('smtp', {}).get('server', '')
+    smtp_server = smtp_server_from_config if smtp_server_from_config else DEFAULT_SMTP_SERVER
+    if smtp_server:
         if i18n.get_language() == 'ja':
             print(f"SMTPサーバー: {smtp_server} (設定済み)")
         else:
@@ -446,9 +536,9 @@ def main():
             smtp_port = 587
 
     # メールアドレスの取得（設定ファイルまたはデフォルト値から）
-    email_from_config = config.get('sender', {}).get('email_address', DEFAULT_EMAIL_ADDRESS)
-    if email_from_config:
-        email_address = email_from_config
+    email_from_config = config.get('sender', {}).get('email_address', '')
+    email_address = email_from_config if email_from_config else DEFAULT_EMAIL_ADDRESS
+    if email_address:
         if i18n.get_language() == 'ja':
             print(f"送信元メールアドレス: {email_address} (設定済み)")
         else:
@@ -468,9 +558,9 @@ def main():
         email_password = getpass(i18n.get('cli_email_password') + ": ")
 
     # 送信元表示名の取得（設定ファイルまたはデフォルト値から）
-    display_name_from_config = config.get('sender', {}).get('display_name', SENDER_DISPLAY_NAME)
-    if display_name_from_config:
-        sender_display_name = display_name_from_config
+    display_name_from_config = config.get('sender', {}).get('display_name', '')
+    sender_display_name = display_name_from_config if display_name_from_config else SENDER_DISPLAY_NAME
+    if sender_display_name:
         if i18n.get_language() == 'ja':
             print(f"送信元表示名: {sender_display_name} (設定済み)")
         else:
@@ -479,9 +569,9 @@ def main():
         sender_display_name = input(i18n.get('cli_sender_name') + ": ").strip()
     
     # ファイルと設定
-    csv_from_config = config.get('files', {}).get('csv_file', DEFAULT_CSV_FILE)
-    if csv_from_config:
-        csv_file = csv_from_config
+    csv_from_config = config.get('files', {}).get('csv_file', '')
+    csv_file = csv_from_config if csv_from_config else DEFAULT_CSV_FILE
+    if csv_file:
         if i18n.get_language() == 'ja':
             print(f"受信者リストCSVファイル: {csv_file} (設定済み)")
         else:
@@ -489,9 +579,9 @@ def main():
     else:
         csv_file = input(i18n.get('cli_csv_file') + ": ") or "list.csv"
 
-    template_from_config = config.get('files', {}).get('template_file', DEFAULT_TEMPLATE_FILE)
-    if template_from_config:
-        template_file = template_from_config
+    template_from_config = config.get('files', {}).get('template_file', '')
+    template_file = template_from_config if template_from_config else DEFAULT_TEMPLATE_FILE
+    if template_file:
         if i18n.get_language() == 'ja':
             print(f"メールテンプレートファイル: {template_file} (設定済み)")
         else:
@@ -500,9 +590,16 @@ def main():
         template_file = input(i18n.get('cli_template_file') + ": ") or "body.txt"
     
     # オプション設定
-    cc_from_config = config.get('email_options', {}).get('cc', DEFAULT_CC if DEFAULT_CC is not None else "")
-    if DEFAULT_CC is not None or cc_from_config:
-        cc = cc_from_config if cc_from_config else None
+    cc_from_config = config.get('email_options', {}).get('cc', '')
+    # 設定ファイルの値が優先、次にDEFAULT値
+    if cc_from_config:
+        cc = cc_from_config or None
+    elif DEFAULT_CC is not None:
+        cc = DEFAULT_CC or None
+    else:
+        cc = None
+
+    if cc or (cc == "" and (cc_from_config or DEFAULT_CC is not None)):
         if i18n.get_language() == 'ja':
             print(f"CC: {cc if cc else 'なし'} (設定済み)")
         else:
@@ -510,9 +607,16 @@ def main():
     else:
         cc = input(i18n.get('cli_cc') + ": ").strip() or None
 
-    bcc_from_config = config.get('email_options', {}).get('bcc', DEFAULT_BCC if DEFAULT_BCC is not None else "")
-    if DEFAULT_BCC is not None or bcc_from_config:
-        bcc = bcc_from_config if bcc_from_config else None
+    bcc_from_config = config.get('email_options', {}).get('bcc', '')
+    # 設定ファイルの値が優先、次にDEFAULT値
+    if bcc_from_config:
+        bcc = bcc_from_config or None
+    elif DEFAULT_BCC is not None:
+        bcc = DEFAULT_BCC or None
+    else:
+        bcc = None
+
+    if bcc or (bcc == "" and (bcc_from_config or DEFAULT_BCC is not None)):
         if i18n.get_language() == 'ja':
             print(f"BCC: {bcc if bcc else 'なし'} (設定済み)")
         else:
@@ -520,9 +624,16 @@ def main():
     else:
         bcc = input(i18n.get('cli_bcc') + ": ").strip() or None
 
-    reply_to_from_config = config.get('email_options', {}).get('reply_to', DEFAULT_REPLY_TO if DEFAULT_REPLY_TO is not None else "")
-    if DEFAULT_REPLY_TO is not None or reply_to_from_config:
-        reply_to = reply_to_from_config if reply_to_from_config else None
+    reply_to_from_config = config.get('email_options', {}).get('reply_to', '')
+    # 設定ファイルの値が優先、次にDEFAULT値
+    if reply_to_from_config:
+        reply_to = reply_to_from_config or None
+    elif DEFAULT_REPLY_TO is not None:
+        reply_to = DEFAULT_REPLY_TO or None
+    else:
+        reply_to = None
+
+    if reply_to or (reply_to == "" and (reply_to_from_config or DEFAULT_REPLY_TO is not None)):
         if i18n.get_language() == 'ja':
             print(f"Reply-To: {reply_to if reply_to else 'なし'} (設定済み)")
         else:

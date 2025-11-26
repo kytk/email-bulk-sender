@@ -1,6 +1,6 @@
 # メール一括送信ツール
 
-CSVリストに基づいた個別対応のメールを一斉送信するツールです。コマンドライン版（CLI）とGUI版の両方を提供しています。
+CSVやExcelでのリストに基づいた個別対応のメールを一斉送信するツールです。コマンドライン版（CLI）とGUI版の両方を提供しています。
 
 ## ツールの種類
 
@@ -72,7 +72,8 @@ Pythonがインストールされていない環境でも実行可能です。�
 ## 機能
 
 ### 共通機能
-- CSVファイルから受信者リスト（企業名、氏名、メールアドレス）を読み込み
+- **CSVおよびExcelファイル（.xlsx）対応** - 受信者リスト（企業名、氏名、メールアドレス）を読み込み
+- **改行コードの自動処理** - Windows/Unix/Mac間でのファイル交換に対応
 - テンプレート内の`{企業}`と`{氏名}`を各受信者の情報に自動置換
 - 件名と本文を1つのテンプレートファイルで管理
 - CC、BCC、Reply-To の設定に対応
@@ -99,7 +100,20 @@ Pythonがインストールされていない環境でも実行可能です。�
 
 ### 必要なPythonライブラリ
 
+#### CLI版（基本機能）
 標準ライブラリのみ使用するため、追加インストールは不要です。
+
+#### Excelファイル対応（オプション）
+Excelファイル（.xlsx）を使用する場合は、以下をインストール：
+```bash
+pip install openpyxl
+```
+
+#### GUI版
+GUI版を使用する場合は、以下をインストール：
+```bash
+pip install customtkinter chardet openpyxl
+```
 
 ## セットアップ
 
@@ -113,7 +127,59 @@ cd email-bulk-sender
 # または、bulk_email_sender.py を直接ダウンロード
 ```
 
-### 2. Gmailアプリパスワードの取得
+### 2. 仮想環境のセットアップ（推奨）
+
+仮想環境を使用することで、システム全体に影響を与えずにパッケージを管理できます。
+
+#### 仮想環境の作成と有効化
+
+**Unix/Mac/Linux:**
+```bash
+# 仮想環境を作成
+python3 -m venv venv_email
+
+# 仮想環境を有効化
+source venv_email/bin/activate
+```
+
+**Windows:**
+```bash
+# 仮想環境を作成
+python -m venv venv_email
+
+# 仮想環境を有効化（コマンドプロンプト）
+venv_email\Scripts\activate
+
+# 仮想環境を有効化（PowerShell）
+# PowerShellで初めて実行する場合、実行ポリシーを設定する必要があります
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+venv_email\Scripts\Activate.ps1
+```
+
+#### 必要なパッケージのインストール
+
+仮想環境を有効化した後、必要なパッケージをインストール：
+
+**GUI版を使用する場合:**
+```bash
+pip install customtkinter chardet openpyxl
+```
+
+**Excelファイル対応のみ（CLI版）:**
+```bash
+pip install openpyxl
+```
+
+**注:** CLI版でCSVファイルのみ使用する場合は、追加パッケージのインストールは不要です。
+
+#### 仮想環境の終了
+
+作業が終わったら、仮想環境を終了：
+```bash
+deactivate
+```
+
+### 3. Gmailアプリパスワードの取得
 
 **重要**: 通常のGmailパスワードではなく、「アプリパスワード」を使用する必要があります。
 
@@ -158,17 +224,34 @@ email-bulk-sender/
 
 `examples/` ディレクトリにサンプルファイルが用意されています。以下のコマンドでコピーしてすぐに試すことができます：
 
+**Unix/Mac/Linux:**
 ```bash
-cp examples/list.csv.sample list.csv
-cp examples/body.txt.sample body.txt
+cp examples/list_sample.csv list.csv
+cp examples/body_sample.txt body.txt
 # 必要に応じてファイルを編集してください
 ```
 
+**Windows（コマンドプロンプト）:**
+```bash
+copy examples\list_sample.csv list.csv
+copy examples\body_sample_win.txt body.txt
+# 必要に応じてファイルを編集してください
+```
+
+**利用可能なサンプルファイル:**
+- `list_sample.csv` - CSV形式の受信者リスト
+- `list_sample.xlsx` - Excel形式の受信者リスト
+- `body_sample.txt` - UTF-8、Unix改行のメールテンプレート
+- `body_sample_win.txt` - Shift JIS、Windows改行（CR+LF）のメールテンプレート
+- `body_en_sample.txt` - 英語版メールテンプレート
+
 詳細は [examples/README.md](examples/README.md) を参照してください。
 
-### list.csv（受信者リスト）
+### 受信者リスト（list.csv または list.xlsx）
 
-CSVファイルに受信者の情報を記載します。
+受信者の情報をCSVファイルまたはExcelファイル（.xlsx）で記載します。
+
+#### CSVファイル形式（list.csv）
 
 **フォーマット：**
 ```csv
@@ -183,6 +266,25 @@ XYZ商事株式会社,佐藤花子,sato@example.com
 - 1行目は必ずヘッダー行（`企業,氏名,メールアドレス`）
 - 文字コードは UTF-8 で保存
 - Excelで編集する場合、保存時に「CSV UTF-8（コンマ区切り）」を選択
+- Windows/Unix/Mac間でのファイル交換も自動で対応
+
+#### Excelファイル形式（list.xlsx）
+
+**特徴：**
+- Excelで直接編集・保存が可能（CSV変換不要）
+- 改行コードの問題が発生しない
+- 文字コードを気にせず使用可能
+
+**フォーマット：**
+| 企業 | 氏名 | メールアドレス |
+|------|------|----------------|
+| 株式会社ABC | 山田太郎 | yamada@example.com |
+| XYZ商事株式会社 | 佐藤花子 | sato@example.com |
+
+**注意点：**
+- 1行目は必ずヘッダー行（`企業`、`氏名`、`メールアドレス`）
+- アクティブシート（最初のシート）が読み込まれます
+- openpyxlライブラリが必要です（`pip install openpyxl`）
 
 ### body.txt（メールテンプレート）
 
@@ -342,17 +444,24 @@ python gmail_bulk_sender.py --save-config
 
 #### 設定の読み込み
 
-設定ファイルが存在する場合、自動的に読み込まれます：
+CLI版では、`--load-config`フラグを指定した場合のみ設定ファイルを読み込みます：
 
 ```bash
-# 設定ファイルがあれば自動的に読み込まれます
+# デフォルト動作：スクリプト内のDEFAULT_*変数を使用
 python email_bulk_sender.py
 
-# 明示的に読み込みを指定することも可能
+# 設定ファイルから読み込む場合
 python email_bulk_sender.py --load-config
+
+# Gmail版の場合
+python gmail_bulk_sender.py --load-config
 ```
 
-設定ファイルに保存されていない項目（例：パスワード）のみ入力を求められます。
+**動作の違い：**
+- **フラグなし**：スクリプト内の`DEFAULT_*`変数が使用されます。設定ファイルがあっても無視されます。
+- **--load-config**：設定ファイルから読み込みます。設定ファイルに保存されていない項目（例：パスワード）のみ入力を求められます。
+
+**注意**：GUI版は起動時に自動的に設定ファイルを読み込みます。
 
 ### GUI版での使用方法
 
@@ -636,8 +745,10 @@ ssl.SSLError: [SSL: WRONG_VERSION_NUMBER]
 GUI版を使用する場合、追加のパッケージが必要です：
 
 ```bash
-pip install customtkinter chardet
+pip install customtkinter chardet openpyxl
 ```
+
+注: `openpyxl`はExcelファイル（.xlsx）のサポートに必要です。CSVファイルのみ使用する場合は不要ですが、インストールを推奨します。
 
 ### 起動方法
 
@@ -721,9 +832,11 @@ zipファイルには以下が含まれます：
 EmailBulkSender_xxx.zip
 ├── EmailBulkSender_xxx[.exe]  # 実行ファイル
 ├── examples/                   # サンプルファイル
-│   ├── list.csv.sample
-│   ├── body.txt.sample
-│   ├── body_en.txt.sample
+│   ├── list_sample.csv
+│   ├── list_sample.xlsx
+│   ├── body_sample.txt
+│   ├── body_sample_win.txt    # Windows用（Shift JIS、CR+LF）
+│   ├── body_en_sample.txt
 │   └── README.md
 ├── README.md                   # 使い方ガイド
 └── LICENSE                     # ライセンス
@@ -732,15 +845,16 @@ EmailBulkSender_xxx.zip
 **配布方法：**
 zipファイルを配布すれば、受け取った人は解凍してすぐに使い始められます：
 1. zipファイルを解凍
-2. `examples/list.csv.sample` を `list.csv` にコピー
-3. `examples/body.txt.sample` を `body.txt` にコピー
-4. ファイルを編集して実行ファイルをダブルクリック
+2. サンプルファイルをコピー：
+   - **Windows:** `examples\list_sample.csv` を `list.csv` にコピー、`examples\body_sample_win.txt` を `body.txt` にコピー
+   - **Unix/Mac:** `examples/list_sample.csv` を `list.csv` にコピー、`examples/body_sample.txt` を `body.txt` にコピー
+3. ファイルを編集して実行ファイルをダブルクリック
 
 ### 手動ビルド
 
 1. PyInstallerをインストール：
    ```bash
-   pip install pyinstaller customtkinter chardet
+   pip install pyinstaller customtkinter chardet openpyxl
    ```
 
 2. 実行ファイルを作成：
@@ -799,13 +913,13 @@ zipファイルを配布すれば、受け取った人は解凍してすぐに�
 
 **作成日**: 2025年9月
 **更新日**: 2025年11月
-**バージョン**: 2.1（設定ファイル機能追加）
+**バージョン**: 2.3（設定読み込みロジック改善）
 
 ---
 
 # Email Bulk Sender Tool
 
-A tool for sending personalized bulk emails based on a CSV recipient list. Provides both CLI (command line) and GUI versions.
+A tool for sending personalized bulk emails based on CSV or Excel recipient lists. Provides both CLI (command line) and GUI versions.
 
 ## Tool Types
 
@@ -875,7 +989,8 @@ The following documentation primarily covers the CLI version. For GUI version us
 ## Features
 
 ### Common Features
-- Load recipient list (company name, name, email address) from CSV file
+- **CSV and Excel file (.xlsx) support** - Load recipient list (company name, name, email address)
+- **Automatic newline handling** - Compatible with file exchange between Windows/Unix/Mac
 - Automatically replace `{企業}` (company) and `{氏名}` (name) placeholders with individual recipient information
 - Manage subject and body in a single template file
 - Support for CC, BCC, and Reply-To
@@ -902,7 +1017,20 @@ The following documentation primarily covers the CLI version. For GUI version us
 
 ### Required Python Libraries
 
+#### CLI Version (Basic Features)
 Only standard libraries are used, so no additional installation is required.
+
+#### Excel File Support (Optional)
+To use Excel files (.xlsx), install the following:
+```bash
+pip install openpyxl
+```
+
+#### GUI Version
+To use the GUI version, install the following:
+```bash
+pip install customtkinter chardet openpyxl
+```
 
 ## Setup
 
@@ -916,7 +1044,59 @@ cd email-bulk-sender
 # Or download bulk_email_sender.py directly
 ```
 
-### 2. Obtain Gmail App Password
+### 2. Virtual Environment Setup (Recommended)
+
+Using a virtual environment allows you to manage packages without affecting your system-wide Python installation.
+
+#### Creating and Activating Virtual Environment
+
+**Unix/Mac/Linux:**
+```bash
+# Create virtual environment
+python3 -m venv venv_email
+
+# Activate virtual environment
+source venv_email/bin/activate
+```
+
+**Windows:**
+```bash
+# Create virtual environment
+python -m venv venv_email
+
+# Activate virtual environment (Command Prompt)
+venv_email\Scripts\activate
+
+# Activate virtual environment (PowerShell)
+# If running PowerShell for the first time, you need to set the execution policy
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+venv_email\Scripts\Activate.ps1
+```
+
+#### Installing Required Packages
+
+After activating the virtual environment, install required packages:
+
+**For GUI version:**
+```bash
+pip install customtkinter chardet openpyxl
+```
+
+**For Excel file support only (CLI version):**
+```bash
+pip install openpyxl
+```
+
+**Note:** No additional packages are required for CLI version with CSV files only.
+
+#### Deactivating Virtual Environment
+
+When you're done, deactivate the virtual environment:
+```bash
+deactivate
+```
+
+### 3. Obtain Gmail App Password
 
 **Important**: You must use an "App Password", not your regular Gmail password.
 
@@ -961,17 +1141,34 @@ email-bulk-sender/
 
 Sample files are provided in the `examples/` directory. You can copy and start using them immediately:
 
+**Unix/Mac/Linux:**
 ```bash
-cp examples/list.csv.sample list.csv
-cp examples/body.txt.sample body.txt
+cp examples/list_sample.csv list.csv
+cp examples/body_sample.txt body.txt
 # Edit the files as needed
 ```
 
+**Windows (Command Prompt):**
+```bash
+copy examples\list_sample.csv list.csv
+copy examples\body_sample_win.txt body.txt
+# Edit the files as needed
+```
+
+**Available Sample Files:**
+- `list_sample.csv` - Recipient list in CSV format
+- `list_sample.xlsx` - Recipient list in Excel format
+- `body_sample.txt` - Email template (UTF-8, Unix line endings)
+- `body_sample_win.txt` - Email template for Windows (Shift JIS, CR+LF)
+- `body_en_sample.txt` - English email template
+
 See [examples/README.md](examples/README.md) for details.
 
-### list.csv (Recipient List)
+### Recipient List (list.csv or list.xlsx)
 
-Enter recipient information in the CSV file.
+Enter recipient information in CSV or Excel file (.xlsx).
+
+#### CSV File Format (list.csv)
 
 **Format:**
 ```csv
@@ -986,6 +1183,25 @@ XYZ商事株式会社,佐藤花子,sato@example.com
 - First line must be the header row (`企業,氏名,メールアドレス`)
 - Save with UTF-8 encoding
 - If editing in Excel, select "CSV UTF-8 (Comma delimited)" when saving
+- Automatic newline handling for file exchange between Windows/Unix/Mac
+
+#### Excel File Format (list.xlsx)
+
+**Features:**
+- Direct editing and saving in Excel (no CSV conversion needed)
+- No newline code issues
+- No character encoding concerns
+
+**Format:**
+| 企業 | 氏名 | メールアドレス |
+|------|------|----------------|
+| 株式会社ABC | 山田太郎 | yamada@example.com |
+| XYZ商事株式会社 | 佐藤花子 | sato@example.com |
+
+**Notes:**
+- First line must be the header row (`企業`, `氏名`, `メールアドレス`)
+- The active sheet (first sheet) will be read
+- Requires openpyxl library (`pip install openpyxl`)
 
 ### body.txt (Email Template)
 
@@ -1144,17 +1360,24 @@ When you run for the first time and enter settings, they will be saved to the co
 
 #### Loading Settings
 
-If a configuration file exists, it will be loaded automatically:
+In CLI version, configuration files are loaded only when `--load-config` flag is specified:
 
 ```bash
-# Automatically loads if config file exists
+# Default behavior: Uses DEFAULT_* variables in the script
 python email_bulk_sender.py
 
-# You can also explicitly specify loading
+# Load from configuration file
 python email_bulk_sender.py --load-config
+
+# For Gmail version
+python gmail_bulk_sender.py --load-config
 ```
 
-You will only be prompted for items not saved in the configuration file (e.g., password).
+**Behavior Differences:**
+- **Without flag**: Uses `DEFAULT_*` variables in the script. Configuration files are ignored even if they exist.
+- **With --load-config**: Loads from configuration file. You will only be prompted for items not saved in the file (e.g., password).
+
+**Note**: GUI version automatically loads configuration files on startup.
 
 ### GUI Version Usage
 
@@ -1438,8 +1661,10 @@ ssl.SSLError: [SSL: WRONG_VERSION_NUMBER]
 For GUI version, additional packages are required:
 
 ```bash
-pip install customtkinter chardet
+pip install customtkinter chardet openpyxl
 ```
+
+Note: `openpyxl` is required for Excel file (.xlsx) support. If you only use CSV files, it's not required, but installation is recommended.
 
 ### How to Launch
 
@@ -1542,7 +1767,7 @@ Distribute the zip file, and recipients can start using it immediately:
 
 1. Install PyInstaller:
    ```bash
-   pip install pyinstaller customtkinter chardet
+   pip install pyinstaller customtkinter chardet openpyxl
    ```
 
 2. Create executables:
@@ -1600,5 +1825,5 @@ For issues or questions, please create an Issue.
 ---
 
 **Created**: 23 September 2025
-**Updated**: 9 November 2025
-**Version**: 2.1 (Configuration file support added)
+**Updated**: 26 November 2025
+**Version**: 2.3 (Configuration loading logic improvements)
