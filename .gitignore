@@ -13,6 +13,7 @@ dist/
 
 # Virtual Environment
 venv/
+venv_email/
 env/
 ENV/
 .venv/

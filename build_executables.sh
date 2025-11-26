@@ -42,6 +42,18 @@ if [ $? -ne 0 ]; then
     fi
 fi
 
+pip list | grep -q openpyxl
+if [ $? -ne 0 ]; then
+    echo "openpyxlがインストールされていません。インストールしますか？ (y/n)"
+    read -r answer
+    if [ "$answer" = "y" ]; then
+        pip install openpyxl
+    else
+        echo "openpyxlが必要です。終了します。"
+        exit 1
+    fi
+fi
+
 echo ""
 echo "ビルドを開始します..."
 echo ""

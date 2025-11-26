@@ -353,10 +353,15 @@ class GmailBulkSenderGUI(ctk.CTk):
         )
 
     def select_csv_file(self):
-        """CSVファイル選択"""
+        """CSVまたはExcelファイル選択"""
         filename = filedialog.askopenfilename(
             title=self.i18n.get('select_csv'),
-            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
+            filetypes=[
+                ("CSV/Excel files", "*.csv;*.xlsx"),
+                ("CSV files", "*.csv"),
+                ("Excel files", "*.xlsx"),
+                ("All files", "*.*")
+            ]
         )
         if filename:
             self.csv_file.set(filename)
