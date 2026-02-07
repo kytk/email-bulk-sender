@@ -75,3 +75,9 @@ test_files/
 
 EmailBulkSender.spec
 
+EmailBulkSender_mac_intel.dmg
+EmailBulkSender_mac_intel/
+pybulk_maci/
+pybulk_maca/
+pybulk_win/
+

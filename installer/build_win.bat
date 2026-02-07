@@ -14,7 +14,7 @@ setlocal
 
 set APP_NAME=EmailBulkSender
 set SCRIPT=email_bulk_sender_gui.py
-set VENV_NAME=pywin
+set VENV_NAME=pybulk_win
 
 REM スクリプトの存在確認
 if not exist "%SCRIPT%" (

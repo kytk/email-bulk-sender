@@ -31,9 +31,9 @@ DMG_NAME="EmailBulkSender_mac_${ARCH_LABEL}.dmg"
 
 # venv 名をアーキテクチャに応じて設定
 if [ "$ARCH_LABEL" = "arm64" ]; then
-    VENV_NAME="pymaca"
+    VENV_NAME="pybulk_maca"
 else
-    VENV_NAME="pymaci"
+    VENV_NAME="pybulk_maci"
 fi
 
 # スクリプトの存在確認
