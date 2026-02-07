@@ -230,6 +230,9 @@ class GuiI18n(I18n):
         }
     }
 
+    def __init__(self, lang='ja'):
+        super().__init__(lang)
+
     def get(self, key, *args):
         """GUI用テキストを優先的に検索し、なければ親クラスのテキストを返す"""
         text = self.GUI_TEXTS.get(self.lang, {}).get(key)

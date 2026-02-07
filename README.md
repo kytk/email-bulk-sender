@@ -11,12 +11,14 @@ CSVやExcelのリストに基づいた個別対応のメールを一斉送信す
 - [ファイルの準備](#ファイルの準備)
 - [使い方（CLI版）](#使い方cli版)
 - [使い方（GUI版）](#使い方gui版)
-- [Windowsインストーラーの作成](#windowsインストーラーの作成)
+- [インストーラーの作成](#インストーラーの作成)
 - [主要メールサービスのSMTP設定](#主要メールサービスのsmtp設定)
 - [トラブルシューティング](#トラブルシューティング)
 - [よくある質問](#よくある質問)
 - [ベストプラクティス](#ベストプラクティス)
+- [注意事項](#注意事項)
 - [ライセンス](#ライセンス)
+- [サポート](#サポート)
 
 ## 機能
 
@@ -38,7 +40,7 @@ CSVやExcelのリストに基づいた個別対応のメールを一斉送信す
 | 種類 | ファイル | 説明 |
 |------|----------|------|
 | CLI版 | `email_bulk_sender.py` | コマンドライン版。対話形式またはオプション指定で実行 |
-| GUI版 | `email_bulk_sender_gui.py` | GUIアプリケーション版。Windowsインストーラーにも対応 |
+| GUI版 | `email_bulk_sender_gui.py` | GUIアプリケーション版。Windows/macOSインストーラーにも対応 |
 
 ### GUI版の追加機能
 
@@ -47,7 +49,7 @@ CSVやExcelのリストに基づいた個別対応のメールを一斉送信す
 - テスト送信（指定アドレスに1通だけ送信）
 - 送信進捗バーとリアルタイムログ
 - 送信中のキャンセル機能
-- パスワードの安全な保存（keyring / Windows Credential Store）
+- パスワードの安全な保存（Windows: Credential Store / macOS: Keychain）
 - GUI上での日本語・英語切り替え
 
 ## 必要な環境
@@ -95,14 +97,15 @@ email-bulk-sender/
 ├── email_bulk_sender_gui.py  # GUI版
 ├── requirements.txt          # 依存パッケージ
 ├── installer/
-│   └── setup.iss             # Inno Setup スクリプト
+│   ├── setup.iss             # Inno Setup スクリプト（Windows用）
+│   ├── build_win.bat         # Windows ビルドスクリプト
+│   └── build_mac.sh          # macOS ビルドスクリプト
 ├── examples/                 # サンプルファイル
 │   ├── list_sample.csv
 │   ├── list_sample.xlsx
 │   ├── body_sample.txt
 │   ├── body_sample_win.txt
 │   └── body_en_sample.txt
-├── CLAUDE.md                 # 開発仕様書
 ├── LICENSE
 └── README.md
 ```
@@ -153,27 +156,21 @@ XYZ商事株式会社,佐藤花子,sato@example.com
 ### メールテンプレート（body.txt）
 
 ```
-【重要】新サービスのご案内 - {所属} {氏名}様
+ご案内 - {所属} {氏名}様
 
 {所属}
 {氏名}様
 
 いつもお世話になっております。
-
-この度、新サービスをリリースいたしましたので、
-ご案内させていただきます。
-
-────────────────────────
-株式会社サンプル
-営業部 山田太郎
-Email: info@example.com
-────────────────────────
+（本文をここに記載します）
 ```
 
 **ルール：**
 - **1行目**: 件名（`{所属}` で所属名、`{氏名}` で氏名を自動置換）
 - **2行目**: 空行（必須）
 - **3行目以降**: 本文（同じプレースホルダーが使用可能）
+
+`examples/body_sample.txt` にプレースホルダーの使い方を説明したサンプルがあります。
 
 ## 使い方（CLI版）
 
@@ -239,41 +236,43 @@ GUI版は以下のセクションで構成されています：
 ### 設定の保存
 
 - 「設定を保存」ボタンでSMTPサーバー、メールアドレス等の設定をJSONファイルに保存
-- パスワードは `keyring`（Windows Credential Store）に安全に保存
+- パスワードは `keyring`（Windows: Credential Store / macOS: Keychain）に安全に保存
 - 次回起動時に自動的に読み込まれます
 
 ### 言語切り替え
 
 画面右上の「JA / EN」ボタンで日本語・英語を即時切り替えできます。
 
-## Windowsインストーラーの作成
+## インストーラーの作成
 
-Windows上で以下の手順でインストーラーを作成できます。
+各OS用のビルドスクリプトが `installer/` ディレクトリに用意されています。
 
-### 1. 準備
+**前提条件（共通）：**
 
 ```bash
 pip install -r requirements.txt
 pip install pyinstaller
 ```
 
-[Inno Setup](https://jrsoftware.org/isinfo.php) をインストールしてください。
+### Windows
 
-### 2. PyInstallerでexe化
+[Inno Setup](https://jrsoftware.org/isdl.php) を事前にインストールしてください（インストール時に日本語の言語ファイルも選択してください）。
+
+ビルドの実行：
 
 ```bash
-pyinstaller --onedir --windowed --name EmailBulkSender email_bulk_sender_gui.py
+installer\build_win.bat
 ```
 
-`dist\EmailBulkSender\` にexeと関連ファイルが生成されます。
+以下が生成されます：
+- `dist\EmailBulkSender\EmailBulkSender.exe` - 実行ファイル
+- `installer\Output\EmailBulkSender_Setup.exe` - インストーラー
+- `EmailBulkSender_win.zip` - 配布用ZIP（インストーラー + サンプルファイル + README）
 
-### 3. 動作確認
+**注意：** インストーラーやexeの実行時に「WindowsによってPCが保護されました」と表示される場合は、「詳細情報」をクリックし、「実行」ボタンを押してください。これはコード署名がないために表示される警告であり、ソフトウェアに問題があるわけではありません。
 
-`dist\EmailBulkSender\EmailBulkSender.exe` を直接実行して動作を確認してください。
-
-### 4. Inno Setupでインストーラー作成
-
-Inno Setup で `installer\setup.iss` を開いてコンパイルすると、`installer\Output\EmailBulkSender_Setup.exe` が生成されます。
+![Windows警告画面](img/win_warning1.png)
+![詳細情報をクリック後](img/win_warning2.png)
 
 **インストーラーの機能：**
 - デフォルトインストール先: `C:\Program Files\EmailBulkSender`
@@ -281,6 +280,51 @@ Inno Setup で `installer\setup.iss` を開いてコンパイルすると、`ins
 - デスクトップショートカット（オプション）
 - アンインストーラー付き
 - 日本語・英語対応
+
+**手動でビルドする場合：**
+
+```bash
+REM 1. PyInstaller で exe 化
+pyinstaller --onedir --windowed --name EmailBulkSender --collect-data customtkinter email_bulk_sender_gui.py
+
+REM 2. Inno Setup でインストーラー作成
+iscc installer\setup.iss
+```
+
+### macOS
+
+`create-dmg` を事前にインストールしてください（「Applications フォルダへドラッグ」UIつきの DMG を作成します）。
+
+```bash
+brew install create-dmg
+```
+
+ビルドの実行：
+
+```bash
+bash installer/build_mac.sh
+```
+
+実行した Mac のアーキテクチャを自動検出し、対応する配布用 ZIP を生成します。
+
+| ビルド環境 | 生成されるファイル |
+|------------|-------------------|
+| Intel Mac | `EmailBulkSender_mac_intel.zip` |
+| Apple Silicon Mac | `EmailBulkSender_mac_arm64.zip` |
+
+各 ZIP には DMG（インストーラー）、サンプルファイル、README が含まれます。
+
+Intel版と Apple Silicon版の両方を配布する場合は、それぞれの Mac でビルドしてください。
+
+**手動でビルドする場合：**
+
+```bash
+# 1. PyInstaller で .app バンドルを作成
+pyinstaller --onedir --windowed --name "メール一括送信ツール" --collect-data customtkinter email_bulk_sender_gui.py
+
+# 2. DMG を作成（create-dmg を使用）
+create-dmg --volname "メール一括送信ツール" --app-drop-link 400 200 EmailBulkSender.dmg "dist/メール一括送信ツール.app"
+```
 
 ## 主要メールサービスのSMTP設定
 
@@ -346,12 +390,12 @@ A: 現在は `{所属}` と `{氏名}` の2つが使用可能です。追加し�
 4. **プレビュー確認**: GUI版の「プレビュー」機能で実際の送信内容を確認
 5. **送信間隔**: 大量送信時は送信間隔を長めに設定（100通以上は10秒以上推奨）
 
-### 法的注意事項
+## 注意事項
 
-- 受信者の同意なく営業メールを送信しない
-- 特定電子メール法を遵守
-- オプトアウト（配信停止）の手段を提供
-- 個人情報を適切に管理
+- 受信者の同意なく営業メールを送信しないでください
+- 特定電子メール法を遵守してください
+- オプトアウト（配信停止）の手段を提供してください
+- 個人情報を適切に管理してください
 
 ## ライセンス
 
@@ -365,4 +409,4 @@ A: 現在は `{所属}` と `{氏名}` の2つが使用可能です。追加し�
 
 **作成日**: 2025年9月
 **更新日**: 2026年2月
-**バージョン**: 3.0（GUI版追加、Windowsインストーラー対応）
+**バージョン**: 3.0（GUI版追加、Windows/macOSインストーラー対応）

@@ -44,10 +44,6 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 ; PyInstaller の出力ディレクトリからコピー
 Source: "..\dist\EmailBulkSender\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-; サンプルファイル
-Source: "..\examples\*"; DestDir: "{app}\examples"; Flags: ignoreversion recursesubdirs createallsubdirs
-; README
-Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
