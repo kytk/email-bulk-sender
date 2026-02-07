@@ -1,15 +1,15 @@
-; Inno Setup Script for ãƒ¡ãƒ¼ãƒ«ä¸€æ‹¬é€ä¿¡ãƒ„ãƒ¼ãƒ« (Email Bulk Sender)
+; Inno Setup Script for ƒ[ƒ‹ˆêŠ‡‘—Mƒc[ƒ‹ (Email Bulk Sender)
 ;
-; ä½¿ç”¨æ–¹æ³•:
-;   1. PyInstaller ã§ãƒ“ãƒ«ãƒ‰:
+; g—p•û–@:
+;   1. PyInstaller ‚Åƒrƒ‹ƒh:
 ;      pyinstaller --onedir --windowed --name EmailBulkSender email_bulk_sender_gui.py
 ;
-;   2. Inno Setup ã§ã“ã®ã‚¹ã‚¯ãƒªãƒ—ãƒˆã‚’ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«:
+;   2. Inno Setup ‚Å‚±‚ÌƒXƒNƒŠƒvƒg‚ğƒRƒ“ƒpƒCƒ‹:
 ;      iscc installer\setup.iss
 ;
-;   â€» å‡ºåŠ›å…ˆ: installer\Output\EmailBulkSender_Setup.exe
+;   ¦ o—Íæ: installer\Output\EmailBulkSender_Setup.exe
 
-#define MyAppName "ãƒ¡ãƒ¼ãƒ«ä¸€æ‹¬é€ä¿¡ãƒ„ãƒ¼ãƒ«"
+#define MyAppName "ƒ[ƒ‹ˆêŠ‡‘—Mƒc[ƒ‹"
 #define MyAppNameEn "Email Bulk Sender"
 #define MyAppVersion "3.0"
 #define MyAppPublisher "kytk"
@@ -42,7 +42,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-; PyInstaller ã®å‡ºåŠ›ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã‹ã‚‰ã‚³ãƒ”ãƒ¼
+; PyInstaller ‚Ìo—ÍƒfƒBƒŒƒNƒgƒŠ‚©‚çƒRƒs[
 Source: "..\dist\EmailBulkSender\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]

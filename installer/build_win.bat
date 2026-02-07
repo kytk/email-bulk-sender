@@ -1,13 +1,13 @@
 @echo off
 REM ==========================================
-REM Windows ãƒ“ãƒ«ãƒ‰ã‚¹ã‚¯ãƒªãƒ—ãƒˆ
-REM ãƒ¡ãƒ¼ãƒ«ä¸€æ‹¬é€ä¿¡ãƒ„ãƒ¼ãƒ« (Email Bulk Sender)
+REM Windows ƒrƒ‹ƒhƒXƒNƒŠƒvƒg
+REM ƒ[ƒ‹ˆêŠ‡‘—Mƒc[ƒ‹ (Email Bulk Sender)
 REM
-REM ä½¿ã„æ–¹:
+REM g‚¢•û:
 REM   cd email-bulk-sender
 REM   installer\build_win.bat
 REM
-REM PyInstaller ã§ exe ã‚’ç”Ÿæˆã—ã€Inno Setup ã§ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ©ãƒ¼ã‚’ä½œæˆã—ã¾ã™ã€‚
+REM PyInstaller ‚Å exe ‚ğ¶¬‚µAInno Setup ‚ÅƒCƒ“ƒXƒg[ƒ‰[‚ğì¬‚µ‚Ü‚·B
 REM ==========================================
 
 setlocal
@@ -15,69 +15,69 @@ setlocal
 set APP_NAME=EmailBulkSender
 set SCRIPT=email_bulk_sender_gui.py
 
-REM ã‚¹ã‚¯ãƒªãƒ—ãƒˆã®å­˜åœ¨ç¢ºèª
+REM ƒXƒNƒŠƒvƒg‚Ì‘¶İŠm”F
 if not exist "%SCRIPT%" (
-    echo ã‚¨ãƒ©ãƒ¼: %SCRIPT% ãŒè¦‹ã¤ã‹ã‚Šã¾ã›ã‚“ã€‚ãƒ—ãƒ­ã‚¸ã‚§ã‚¯ãƒˆã®ãƒ«ãƒ¼ãƒˆãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã§å®Ÿè¡Œã—ã¦ãã ã•ã„ã€‚
+    echo ƒGƒ‰[: %SCRIPT% ‚ªŒ©‚Â‚©‚è‚Ü‚¹‚ñBƒvƒƒWƒFƒNƒg‚Ìƒ‹[ƒgƒfƒBƒŒƒNƒgƒŠ‚ÅÀs‚µ‚Ä‚­‚¾‚³‚¢B
     exit /b 1
 )
 
-REM ä¾å­˜ãƒ‘ãƒƒã‚±ãƒ¼ã‚¸ã®ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«
+REM ˆË‘¶ƒpƒbƒP[ƒW‚ÌƒCƒ“ƒXƒg[ƒ‹
 echo.
-echo --- ä¾å­˜ãƒ‘ãƒƒã‚±ãƒ¼ã‚¸ã‚’ç¢ºèªä¸­ ---
+echo --- ˆË‘¶ƒpƒbƒP[ƒW‚ğŠm”F’† ---
 pip install -r requirements.txt
 pip install pyinstaller
 
-REM æ—¢å­˜ã®ãƒ“ãƒ«ãƒ‰ã‚’ã‚¯ãƒªãƒ¼ãƒ³
+REM Šù‘¶‚Ìƒrƒ‹ƒh‚ğƒNƒŠ[ƒ“
 echo.
-echo --- æ—¢å­˜ã®ãƒ“ãƒ«ãƒ‰ã‚’ã‚¯ãƒªãƒ¼ãƒ³ä¸­ ---
+echo --- Šù‘¶‚Ìƒrƒ‹ƒh‚ğƒNƒŠ[ƒ“’† ---
 if exist build rmdir /s /q build
 if exist dist rmdir /s /q dist
 
-REM PyInstaller ã§ãƒ“ãƒ«ãƒ‰
+REM PyInstaller ‚Åƒrƒ‹ƒh
 echo.
-echo --- PyInstaller ã§ãƒ“ãƒ«ãƒ‰ä¸­ ---
+echo --- PyInstaller ‚Åƒrƒ‹ƒh’† ---
 pyinstaller --onedir --windowed --name %APP_NAME% --collect-data customtkinter %SCRIPT%
 
-REM exe ã®å­˜åœ¨ç¢ºèª
+REM exe ‚Ì‘¶İŠm”F
 if not exist "dist\%APP_NAME%\%APP_NAME%.exe" (
-    echo ã‚¨ãƒ©ãƒ¼: dist\%APP_NAME%\%APP_NAME%.exe ãŒç”Ÿæˆã•ã‚Œã¾ã›ã‚“ã§ã—ãŸã€‚
+    echo ƒGƒ‰[: dist\%APP_NAME%\%APP_NAME%.exe ‚ª¶¬‚³‚ê‚Ü‚¹‚ñ‚Å‚µ‚½B
     exit /b 1
 )
 
 echo.
-echo --- exe ã®ä½œæˆå®Œäº† ---
+echo --- exe ‚Ìì¬Š®—¹ ---
 echo   dist\%APP_NAME%\%APP_NAME%.exe
 
-REM Inno Setup ã§ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ©ãƒ¼ã‚’ä½œæˆ
+REM Inno Setup ‚ÅƒCƒ“ƒXƒg[ƒ‰[‚ğì¬
 echo.
-echo --- Inno Setup ã§ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ©ãƒ¼ã‚’ä½œæˆä¸­ ---
+echo --- Inno Setup ‚ÅƒCƒ“ƒXƒg[ƒ‰[‚ğì¬’† ---
 
 where iscc >nul 2>nul
 if %errorlevel% equ 0 (
     iscc installer\setup.iss
 ) else (
     echo.
-    echo æ³¨æ„: iscc ã‚³ãƒãƒ³ãƒ‰ãŒè¦‹ã¤ã‹ã‚Šã¾ã›ã‚“ã€‚
-    echo Inno Setup ã‚’ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã—ã¦ PATH ã«è¿½åŠ ã™ã‚‹ã‹ã€
-    echo Inno Setup ã® GUI ã§ installer\setup.iss ã‚’é–‹ã„ã¦ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«ã—ã¦ãã ã•ã„ã€‚
+    echo ’ˆÓ: iscc ƒRƒ}ƒ“ƒh‚ªŒ©‚Â‚©‚è‚Ü‚¹‚ñB
+    echo Inno Setup ‚ğƒCƒ“ƒXƒg[ƒ‹‚µ‚Ä PATH ‚É’Ç‰Á‚·‚é‚©A
+    echo Inno Setup ‚Ì GUI ‚Å installer\setup.iss ‚ğŠJ‚¢‚ÄƒRƒ“ƒpƒCƒ‹‚µ‚Ä‚­‚¾‚³‚¢B
     echo.
-    echo ãƒ€ã‚¦ãƒ³ãƒ­ãƒ¼ãƒ‰: https://jrsoftware.org/isdl.php
+    echo ƒ_ƒEƒ“ƒ[ƒh: https://jrsoftware.org/isdl.php
     echo.
     echo ==========================================
-    echo exe ã®ãƒ“ãƒ«ãƒ‰ã¯å®Œäº†ã—ã¦ã„ã¾ã™ã€‚
+    echo exe ‚Ìƒrƒ‹ƒh‚ÍŠ®—¹‚µ‚Ä‚¢‚Ü‚·B
     echo   dist\%APP_NAME%\%APP_NAME%.exe
     echo ==========================================
     goto :end
 )
 
-REM é…å¸ƒç”¨ ZIP ã®ä½œæˆ
+REM ”z•z—p ZIP ‚Ìì¬
 echo.
-echo --- é…å¸ƒç”¨ ZIP ã‚’ä½œæˆä¸­ ---
+echo --- ”z•z—p ZIP ‚ğì¬’† ---
 
 set ZIP_NAME=EmailBulkSender_win.zip
 if exist "%ZIP_NAME%" del "%ZIP_NAME%"
 
-REM ä¸€æ™‚ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã«é…å¸ƒç‰©ã‚’ã¾ã¨ã‚ã‚‹
+REM ˆêƒfƒBƒŒƒNƒgƒŠ‚É”z•z•¨‚ğ‚Ü‚Æ‚ß‚é
 set DIST_DIR=dist\EmailBulkSender_win
 if exist "%DIST_DIR%" rmdir /s /q "%DIST_DIR%"
 mkdir "%DIST_DIR%"
@@ -86,19 +86,19 @@ copy installer\Output\EmailBulkSender_Setup.exe "%DIST_DIR%\"
 xcopy examples "%DIST_DIR%\examples\" /s /e /i
 copy README.md "%DIST_DIR%\"
 
-REM PowerShell ã§ ZIP ã‚’ä½œæˆ
+REM PowerShell ‚Å ZIP ‚ğì¬
 powershell -Command "Compress-Archive -Path '%DIST_DIR%\*' -DestinationPath '%ZIP_NAME%' -Force"
 
 echo.
 echo ==========================================
-echo ãƒ“ãƒ«ãƒ‰å®Œäº†!
+echo ƒrƒ‹ƒhŠ®—¹!
 echo   exe: dist\%APP_NAME%\%APP_NAME%.exe
-echo   ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ©ãƒ¼: installer\Output\EmailBulkSender_Setup.exe
-echo   é…å¸ƒç”¨ZIP: %ZIP_NAME%
+echo   ƒCƒ“ƒXƒg[ƒ‰[: installer\Output\EmailBulkSender_Setup.exe
+echo   ”z•z—pZIP: %ZIP_NAME%
 echo.
-echo   ZIP ã®å†…å®¹:
-echo     - EmailBulkSender_Setup.exe ï¼ˆã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ©ãƒ¼ï¼‰
-echo     - examples/ ï¼ˆã‚µãƒ³ãƒ—ãƒ«ãƒ•ã‚¡ã‚¤ãƒ«ï¼‰
+echo   ZIP ‚Ì“à—e:
+echo     - EmailBulkSender_Setup.exe iƒCƒ“ƒXƒg[ƒ‰[j
+echo     - examples/ iƒTƒ“ƒvƒ‹ƒtƒ@ƒCƒ‹j
 echo     - README.md
 echo ==========================================
 
