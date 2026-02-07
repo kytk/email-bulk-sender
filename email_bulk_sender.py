@@ -13,8 +13,159 @@ from urllib.parse import quote
 import mimetypes
 import chardet
 import argparse
-from i18n import get_i18n
-from config import ConfigManager
+import json
+from pathlib import Path
+from typing import Dict, Any, Optional
+
+# ==================== 内部モジュール定義 ====================
+# i18n.py と config.py が存在しない場合に使用される内部定義
+
+# --- I18n (国際化) モジュール ---
+class I18n:
+    """国際化クラス（内部定義版）"""
+
+    TEXTS = {
+        'ja': {
+            'cli_title': '=== メール一括送信ツール ===',
+            'cli_smtp_server': 'SMTPサーバー (例: smtp.gmail.com)',
+            'cli_smtp_port': 'SMTPポート (デフォルト: 587)',
+            'cli_email_address': '送信元メールアドレス',
+            'cli_email_password': 'メールパスワード',
+            'cli_sender_name': '送信元表示名 (不要ならEnter)',
+            'cli_csv_file': '受信者リストCSVファイル (デフォルト: list.csv)',
+            'cli_template_file': 'メールテンプレートファイル (デフォルト: body.txt)',
+            'cli_cc': 'CC (複数の場合はカンマ区切り、不要ならEnter)',
+            'cli_bcc': 'BCC (複数の場合はカンマ区切り、不要ならEnter)',
+            'cli_reply_to': 'Reply-To (不要ならEnter)',
+            'cli_confirm_header': '\n=== 送信内容確認 ===',
+            'cli_confirm_send': '\n送信を開始しますか？ (yes/no)',
+            'cli_cancelled': '送信をキャンセルしました',
+            'preview_subject': '件名: {0}',
+            'preview_recipients': '送信先: {0}件',
+            'preview_sender': '送信元: {0}',
+            'preview_cc': 'CC: {0}',
+            'preview_bcc': 'BCC: {0}',
+            'preview_reply_to': 'Reply-To: {0}',
+            'preview_attachments': '添付ファイル: {0}',
+            'send_success': '[{0}/{1}] 送信成功: {2} {3} ({4})',
+            'send_failed': '[{0}/{1}] 送信失敗: {2} {3} ({4}) - {5}',
+            'send_complete': '送信完了: 成功 {0}件, 失敗 {1}件',
+        },
+        'en': {
+            'cli_title': '=== Email Bulk Sender ===',
+            'cli_smtp_server': 'SMTP Server (e.g., smtp.gmail.com)',
+            'cli_smtp_port': 'SMTP Port (default: 587)',
+            'cli_email_address': 'Sender Email Address',
+            'cli_email_password': 'Email Password',
+            'cli_sender_name': 'Sender Display Name (press Enter to skip)',
+            'cli_csv_file': 'Recipient List CSV File (default: list.csv)',
+            'cli_template_file': 'Email Template File (default: body.txt)',
+            'cli_cc': 'CC (comma-separated for multiple, press Enter to skip)',
+            'cli_bcc': 'BCC (comma-separated for multiple, press Enter to skip)',
+            'cli_reply_to': 'Reply-To (press Enter to skip)',
+            'cli_confirm_header': '\n=== Confirm Sending Details ===',
+            'cli_confirm_send': '\nStart sending? (yes/no)',
+            'cli_cancelled': 'Sending cancelled',
+            'preview_subject': 'Subject: {0}',
+            'preview_recipients': 'Recipients: {0}',
+            'preview_sender': 'Sender: {0}',
+            'preview_cc': 'CC: {0}',
+            'preview_bcc': 'BCC: {0}',
+            'preview_reply_to': 'Reply-To: {0}',
+            'preview_attachments': 'Attachments: {0}',
+            'send_success': '[{0}/{1}] Success: {2} {3} ({4})',
+            'send_failed': '[{0}/{1}] Failed: {2} {3} ({4}) - {5}',
+            'send_complete': 'Sending complete: {0} succeeded, {1} failed',
+        }
+    }
+
+    def __init__(self, lang=None):
+        import locale
+        if lang is None:
+            try:
+                system_locale = locale.getlocale()[0]
+                lang = 'ja' if system_locale and system_locale.startswith('ja') else 'en'
+            except:
+                lang = 'en'
+        self.lang = lang if lang in ['ja', 'en'] else 'en'
+
+    def get(self, key, *args):
+        text = self.TEXTS.get(self.lang, {}).get(key, key)
+        if args:
+            return text.format(*args)
+        return text
+
+    def get_language(self):
+        return self.lang
+
+class InternalConfigManager:
+    """設定ファイル管理クラス（内部定義版）"""
+
+    CONFIG_VERSION = "2.0"
+
+    def __init__(self, config_type: str = "email"):
+        self.config_type = config_type
+        if config_type == "gmail":
+            self.config_dir = Path.home() / ".gmail_bulk_sender"
+        else:
+            self.config_dir = Path.home() / ".email_bulk_sender"
+        self.config_file = self.config_dir / "config.json"
+
+    def get_default_config(self) -> Dict[str, Any]:
+        base_config = {
+            "version": self.CONFIG_VERSION,
+            "sender": {"email_address": "", "display_name": ""},
+            "files": {"csv_file": "", "template_file": "", "attachments": []},
+            "email_options": {"cc": "", "bcc": "", "reply_to": "", "send_delay": 5},
+            "ui": {"language": "ja"}
+        }
+        if self.config_type == "email":
+            base_config["smtp"] = {"server": "", "port": 587}
+        return base_config
+
+    def load_config(self) -> Optional[Dict[str, Any]]:
+        if not self.config_file.exists():
+            return None
+        try:
+            with open(self.config_file, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+            if "version" not in config:
+                config["version"] = self.CONFIG_VERSION
+            return config
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"Error loading config file: {e}")
+            return None
+
+    def save_config(self, config: Dict[str, Any]) -> bool:
+        try:
+            self.config_dir.mkdir(parents=True, exist_ok=True)
+            if "version" not in config:
+                config["version"] = self.CONFIG_VERSION
+            with open(self.config_file, 'w', encoding='utf-8') as f:
+                json.dump(config, f, ensure_ascii=False, indent=2)
+            os.chmod(self.config_file, 0o600)
+            return True
+        except (IOError, OSError) as e:
+            print(f"Error saving config file: {e}")
+            return False
+
+    def get_config_path(self) -> str:
+        return str(self.config_file)
+
+# --- 条件付きインポート ---
+# 外部ファイルが存在する場合はそれを使用、なければ内部定義を使用
+try:
+    from i18n import get_i18n
+except ImportError:
+    def get_i18n(lang=None):
+        return I18n(lang)
+
+try:
+    from config import ConfigManager
+except ImportError:
+    ConfigManager = InternalConfigManager
+
+# =======================================================
 
 # Excel対応
 try:
@@ -90,11 +241,11 @@ class EmailBulkSender:
         CSVまたはExcelファイルから受信者リストを読み込む（文字コード自動検出）
 
         Args:
-            csv_file: CSVまたはExcelファイルのパス（企業,氏名,メールアドレスの形式）
+            csv_file: CSVまたはExcelファイルのパス（所属,氏名,メールアドレスの形式）
             i18n: 国際化インスタンス
 
         Returns:
-            受信者の辞書リスト [{'company': '株式会社ABC', 'name': '山田太郎', 'email': 'yamada@example.com'}, ...]
+            受信者の辞書リスト [{'affiliation': '株式会社ABC', 'name': '山田太郎', 'email': 'yamada@example.com'}, ...]
         """
         # ファイル拡張子で判定
         file_ext = os.path.splitext(csv_file)[1].lower()
@@ -144,12 +295,12 @@ class EmailBulkSender:
             reader = csv.DictReader(f)
             for row in reader:
                 # CSVのカラム名に応じて調整
-                company_key = '企業' if '企業' in row else 'company'
+                affiliation_key = '所属' if '所属' in row else 'affiliation'
                 name_key = '氏名' if '氏名' in row else 'name'
                 email_key = 'メールアドレス' if 'メールアドレス' in row else 'email'
 
                 recipients.append({
-                    'company': row[company_key].strip(),
+                    'affiliation': row[affiliation_key].strip(),
                     'name': row[name_key].strip(),
                     'email': row[email_key].strip()
                 })
@@ -179,23 +330,23 @@ class EmailBulkSender:
         header = rows[0]
 
         # カラムインデックスを特定
-        company_key = '企業' if '企業' in header else 'company'
+        affiliation_key = '所属' if '所属' in header else 'affiliation'
         name_key = '氏名' if '氏名' in header else 'name'
         email_key = 'メールアドレス' if 'メールアドレス' in header else 'email'
 
         try:
-            company_idx = header.index(company_key)
+            affiliation_idx = header.index(affiliation_key)
             name_idx = header.index(name_key)
             email_idx = header.index(email_key)
         except ValueError as e:
-            error_msg = f"Required columns not found in Excel file. Expected: {company_key}, {name_key}, {email_key}" if i18n is None else i18n.t("error_excel_columns")
+            error_msg = f"Required columns not found in Excel file. Expected: {affiliation_key}, {name_key}, {email_key}" if i18n is None else i18n.t("error_excel_columns")
             raise ValueError(error_msg) from e
 
         # データ行を読み込む
         for row in rows[1:]:
             if row[email_idx]:  # メールアドレスがある行のみ
                 recipients.append({
-                    'company': str(row[company_idx]).strip() if row[company_idx] else '',
+                    'affiliation': str(row[affiliation_idx]).strip() if row[affiliation_idx] else '',
                     'name': str(row[name_idx]).strip() if row[name_idx] else '',
                     'email': str(row[email_idx]).strip()
                 })
@@ -246,7 +397,7 @@ class EmailBulkSender:
 
         return subject, body
     
-    def create_message(self, to_email, to_name, to_company, subject_template, body_template,
+    def create_message(self, to_email, to_name, to_affiliation, subject_template, body_template,
                       cc=None, bcc=None, reply_to=None, attachments=None):
         """
         メールメッセージを作成
@@ -254,7 +405,7 @@ class EmailBulkSender:
         Args:
             to_email: 宛先メールアドレス
             to_name: 宛先氏名
-            to_company: 宛先企業名
+            to_affiliation: 宛先所属名
             subject_template: 件名テンプレート
             body_template: 本文テンプレート
             cc: CCアドレス（カンマ区切りまたはリスト）
@@ -275,8 +426,8 @@ class EmailBulkSender:
 
         msg['To'] = to_email
 
-        # 件名に企業名と氏名を展開
-        subject = subject_template.replace('{企業}', to_company).replace('{氏名}', to_name)
+        # 件名に所属名と氏名を展開
+        subject = subject_template.replace('{所属}', to_affiliation).replace('{氏名}', to_name)
         msg['Subject'] = Header(subject, 'utf-8')
 
         # CC設定
@@ -297,8 +448,8 @@ class EmailBulkSender:
         if reply_to:
             msg['Reply-To'] = reply_to
 
-        # 本文に企業名と氏名を展開
-        body = body_template.replace('{企業}', to_company).replace('{氏名}', to_name)
+        # 本文に所属名と氏名を展開
+        body = body_template.replace('{所属}', to_affiliation).replace('{氏名}', to_name)
         msg.attach(MIMEText(body, 'plain', 'utf-8'))
 
         # 添付ファイルを追加
@@ -413,7 +564,7 @@ class EmailBulkSender:
                     msg = self.create_message(
                         to_email=recipient['email'],
                         to_name=recipient['name'],
-                        to_company=recipient['company'],
+                        to_affiliation=recipient['affiliation'],
                         subject_template=subject_template,
                         body_template=body_template,
                         cc=cc,
@@ -426,10 +577,10 @@ class EmailBulkSender:
                     server.send_message(msg)
                     success_count += 1
                     if i18n:
-                        print(i18n.get('send_success', i, len(recipients), recipient['company'],
+                        print(i18n.get('send_success', i, len(recipients), recipient['affiliation'],
                                       recipient['name'], recipient['email']))
                     else:
-                        print(f"[{i}/{len(recipients)}] 送信成功: {recipient['company']} {recipient['name']} ({recipient['email']})")
+                        print(f"[{i}/{len(recipients)}] 送信成功: {recipient['affiliation']} {recipient['name']} ({recipient['email']})")
 
                     # 送信間隔を設定（レート制限対策）
                     if i < len(recipients):
@@ -438,10 +589,10 @@ class EmailBulkSender:
                 except Exception as e:
                     fail_count += 1
                     if i18n:
-                        print(i18n.get('send_failed', i, len(recipients), recipient['company'],
+                        print(i18n.get('send_failed', i, len(recipients), recipient['affiliation'],
                                       recipient['name'], recipient['email'], str(e)))
                     else:
-                        print(f"[{i}/{len(recipients)}] 送信失敗: {recipient['company']} {recipient['name']} ({recipient['email']}) - エラー: {e}")
+                        print(f"[{i}/{len(recipients)}] 送信失敗: {recipient['affiliation']} {recipient['name']} ({recipient['email']}) - エラー: {e}")
 
             server.quit()
 
