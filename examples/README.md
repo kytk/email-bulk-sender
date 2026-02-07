@@ -19,8 +19,8 @@ cp examples/list.csv.sample list.csv
 
 **フォーマット / Format:**
 ```csv
-企業,氏名,メールアドレス
-Company Name,Person Name,email@example.com
+所属,氏名,メールアドレス
+Affiliation Name,Person Name,email@example.com
 ```
 
 ### body.txt.sample
@@ -42,7 +42,7 @@ cp examples/body.txt.sample body.txt
 ```
 
 **プレースホルダー / Placeholders:**
-- `{企業}` - 企業名に置換されます / Replaced with company name
+- `{所属}` - 所属名に置換されます / Replaced with affiliation name
 - `{氏名}` - 氏名に置換されます / Replaced with person name
 
 ### body_en.txt.sample
@@ -112,21 +112,21 @@ For sending a test email to yourself:
 
 **list.csv:**
 ```csv
-企業,氏名,メールアドレス
+所属,氏名,メールアドレス
 テスト株式会社,テスト太郎,your-email@example.com
 ```
 
 **body.txt:**
 ```
-テスト送信 - {企業} {氏名}様
+テスト送信 - {所属} {氏名}様
 
-{企業}
+{所属}
 {氏名}様
 
 これはテスト送信です。
 プレースホルダーが正しく置換されているか確認してください。
 
-企業名: {企業}
+所属名: {所属}
 氏名: {氏名}
 ```
 
