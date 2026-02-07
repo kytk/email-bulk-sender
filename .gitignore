@@ -20,6 +20,8 @@ venv_email/
 env/
 ENV/
 .venv/
+pymaci/
+pymaca/
 
 # IDE / Editor
 .vscode/
