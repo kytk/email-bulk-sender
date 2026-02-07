@@ -57,6 +57,12 @@ credentials.json
 *password*
 *secret*
 
+# Development docs (not for distribution)
+CLAUDE.md
+BUILD_GUIDE.md
+build_executables.bat
+build_executables.sh
+
 # Attachments (if testing)
 attachments/
 test_files/
