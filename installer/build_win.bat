@@ -14,12 +14,23 @@ setlocal
 
 set APP_NAME=EmailBulkSender
 set SCRIPT=email_bulk_sender_gui.py
+set VENV_NAME=pywin
 
 REM スクリプトの存在確認
 if not exist "%SCRIPT%" (
     echo エラー: %SCRIPT% が見つかりません。プロジェクトのルートディレクトリで実行してください。
     exit /b 1
 )
+
+REM Python 仮想環境の作成・有効化
+echo.
+echo --- Python 仮想環境 (%VENV_NAME%) を準備中 ---
+if not exist "%VENV_NAME%" (
+    python -m venv %VENV_NAME%
+    echo 仮想環境を作成しました: %VENV_NAME%
+)
+call %VENV_NAME%\Scripts\activate.bat
+echo 仮想環境を有効化しました
 
 REM 依存パッケージのインストール
 echo.

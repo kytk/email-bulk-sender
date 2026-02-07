@@ -22,6 +22,7 @@ ENV/
 .venv/
 pymaci/
 pymaca/
+pywin/
 
 # IDE / Editor
 .vscode/
