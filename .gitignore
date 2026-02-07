@@ -66,3 +66,6 @@ build_executables.sh
 # Attachments (if testing)
 attachments/
 test_files/
+
+EmailBulkSender.spec
+
