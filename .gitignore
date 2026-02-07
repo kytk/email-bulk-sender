@@ -11,6 +11,9 @@ dist/
 *.spec
 *.zip
 
+# Inno Setup output
+installer/Output/
+
 # Virtual Environment
 venv/
 venv_email/
