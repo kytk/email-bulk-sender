@@ -15,6 +15,7 @@ setlocal
 set APP_NAME=EmailBulkSender
 set SCRIPT=email_bulk_sender_gui.py
 set VENV_NAME=pybulk_win
+set OUTPUT_DIR=installer\Output
 
 REM スクリプトの存在確認
 if not exist "%SCRIPT%" (
@@ -86,33 +87,35 @@ echo.
 echo --- 配布用 ZIP を作成中 ---
 
 set ZIP_NAME=EmailBulkSender_win.zip
-if exist "%ZIP_NAME%" del "%ZIP_NAME%"
+if exist "%OUTPUT_DIR%\%ZIP_NAME%" del "%OUTPUT_DIR%\%ZIP_NAME%"
 
 REM 一時ディレクトリに配布物をまとめる
 set DIST_DIR=dist\EmailBulkSender_win
 if exist "%DIST_DIR%" rmdir /s /q "%DIST_DIR%"
 mkdir "%DIST_DIR%"
 
-copy installer\Output\EmailBulkSender_Setup.exe "%DIST_DIR%\"
+copy %OUTPUT_DIR%\EmailBulkSender_Setup.exe "%DIST_DIR%\"
 xcopy examples "%DIST_DIR%\examples\" /s /e /i
+xcopy img "%DIST_DIR%\img\" /s /e /i
 
-REM README.md を HTML に変換
+REM README_GUI.md を HTML に変換
 echo --- README.html を生成中 ---
-python -c "import markdown; f=open('README.md',encoding='utf-8'); md=f.read(); f.close(); html=markdown.markdown(md,extensions=['tables','fenced_code']); f=open('%DIST_DIR%\\README.html','w',encoding='utf-8'); f.write('<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>メール一括送信ツール</title></head><body>\n'); f.write(html); f.write('\n</body></html>'); f.close()"
+python -c "import markdown; f=open('README_GUI.md',encoding='utf-8'); md=f.read(); f.close(); html=markdown.markdown(md,extensions=['tables','fenced_code']); f=open('%DIST_DIR%\\README.html','w',encoding='utf-8'); f.write('<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>メール一括送信ツール</title></head><body>\n'); f.write(html); f.write('\n</body></html>'); f.close()"
 
 REM PowerShell で ZIP を作成
-powershell -Command "Compress-Archive -Path '%DIST_DIR%\*' -DestinationPath '%ZIP_NAME%' -Force"
+powershell -Command "Compress-Archive -Path '%DIST_DIR%\*' -DestinationPath '%OUTPUT_DIR%\%ZIP_NAME%' -Force"
 
 echo.
 echo ==========================================
 echo ビルド完了!
 echo   exe: dist\%APP_NAME%\%APP_NAME%.exe
-echo   インストーラー: installer\Output\EmailBulkSender_Setup.exe
-echo   配布用ZIP: %ZIP_NAME%
+echo   インストーラー: %OUTPUT_DIR%\EmailBulkSender_Setup.exe
+echo   配布用ZIP: %OUTPUT_DIR%\%ZIP_NAME%
 echo.
 echo   ZIP の内容:
 echo     - EmailBulkSender_Setup.exe （インストーラー）
 echo     - examples/ （サンプルファイル）
+echo     - img/ （画像）
 echo     - README.html
 echo ==========================================
 

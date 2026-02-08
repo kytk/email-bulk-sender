@@ -139,12 +139,13 @@ mkdir -p "${DIST_DIR}"
 
 cp "${OUTPUT_DIR}/${DMG_NAME}" "${DIST_DIR}/"
 cp -r examples "${DIST_DIR}/examples"
+cp -r img "${DIST_DIR}/img"
 
-# README.md を HTML に変換
+# README_GUI.md を HTML に変換
 echo "--- README.html を生成中 ---"
 python3 -c "
 import markdown
-with open('README.md', encoding='utf-8') as f:
+with open('README_GUI.md', encoding='utf-8') as f:
     md = f.read()
 html = markdown.markdown(md, extensions=['tables', 'fenced_code'])
 with open('${DIST_DIR}/README.html', 'w', encoding='utf-8') as f:
