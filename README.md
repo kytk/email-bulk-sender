@@ -267,7 +267,7 @@ installer\build_win.bat
 以下が生成されます：
 - `dist\EmailBulkSender\EmailBulkSender.exe` - 実行ファイル
 - `installer\Output\EmailBulkSender_Setup.exe` - インストーラー
-- `EmailBulkSender_win.zip` - 配布用ZIP（インストーラー + サンプルファイル + README）
+- `EmailBulkSender_win.zip` - 配布用ZIP（インストーラー + サンプルファイル + README.html）
 
 **注意：** インストーラーやexeの実行時に「WindowsによってPCが保護されました」と表示される場合は、「詳細情報」をクリックし、「実行」ボタンを押してください。これはコード署名がないために表示される警告であり、ソフトウェアに問題があるわけではありません。
 
@@ -293,10 +293,10 @@ iscc installer\setup.iss
 
 ### macOS
 
-`create-dmg` を事前にインストールしてください（「Applications フォルダへドラッグ」UIつきの DMG を作成します）。
+Homebrew の Python と `create-dmg` を事前にインストールしてください（システム Python は古い Tcl/Tk を含むため使用できません）。
 
 ```bash
-brew install create-dmg
+brew install python python-tk create-dmg
 ```
 
 ビルドの実行：
@@ -312,7 +312,7 @@ bash installer/build_mac.sh
 | Intel Mac | `EmailBulkSender_mac_intel.zip` |
 | Apple Silicon Mac | `EmailBulkSender_mac_arm64.zip` |
 
-各 ZIP には DMG（インストーラー）、サンプルファイル、README が含まれます。
+各 ZIP には DMG（インストーラー）、サンプルファイル、README.html が含まれます。
 
 Intel版と Apple Silicon版の両方を配布する場合は、それぞれの Mac でビルドしてください。
 

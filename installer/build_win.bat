@@ -36,7 +36,7 @@ REM 依存パッケージのインストール
 echo.
 echo --- 依存パッケージを確認中 ---
 pip install -r requirements.txt
-pip install pyinstaller
+pip install pyinstaller markdown
 
 REM 既存のビルドをクリーン
 echo.
@@ -95,7 +95,10 @@ mkdir "%DIST_DIR%"
 
 copy installer\Output\EmailBulkSender_Setup.exe "%DIST_DIR%\"
 xcopy examples "%DIST_DIR%\examples\" /s /e /i
-copy README.md "%DIST_DIR%\"
+
+REM README.md を HTML に変換
+echo --- README.html を生成中 ---
+python -c "import markdown; f=open('README.md',encoding='utf-8'); md=f.read(); f.close(); html=markdown.markdown(md,extensions=['tables','fenced_code']); f=open('%DIST_DIR%\\README.html','w',encoding='utf-8'); f.write('<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>メール一括送信ツール</title></head><body>\n'); f.write(html); f.write('\n</body></html>'); f.close()"
 
 REM PowerShell で ZIP を作成
 powershell -Command "Compress-Archive -Path '%DIST_DIR%\*' -DestinationPath '%ZIP_NAME%' -Force"
@@ -110,7 +113,7 @@ echo.
 echo   ZIP の内容:
 echo     - EmailBulkSender_Setup.exe （インストーラー）
 echo     - examples/ （サンプルファイル）
-echo     - README.md
+echo     - README.html
 echo ==========================================
 
 :end

@@ -42,11 +42,34 @@ if [ ! -f "$SCRIPT" ]; then
     exit 1
 fi
 
+# Homebrew Python の検出
+# システム Python (/usr/bin/python3) は古い Tcl/Tk 8.5 を使用しており、
+# macOS 15 以降で tkinter がクラッシュするため、Homebrew Python を使用する
+echo ""
+echo "--- Python を検出中 ---"
+if [ "$ARCH" = "arm64" ]; then
+    BREW_PYTHON="/opt/homebrew/bin/python3"
+else
+    BREW_PYTHON="/usr/local/bin/python3"
+fi
+
+if [ -x "$BREW_PYTHON" ]; then
+    PYTHON="$BREW_PYTHON"
+    echo "Homebrew Python を使用: $PYTHON"
+else
+    echo "エラー: Homebrew Python が見つかりません。"
+    echo "システム Python は古い Tcl/Tk を含むため、GUI アプリのビルドには使用できません。"
+    echo ""
+    echo "以下のコマンドで Homebrew Python をインストールしてください:"
+    echo "  brew install python python-tk"
+    exit 1
+fi
+
 # Python 仮想環境の作成・有効化
 echo ""
 echo "--- Python 仮想環境 (${VENV_NAME}) を準備中 ---"
 if [ ! -d "${VENV_NAME}" ]; then
-    /usr/bin/python3 -m venv "${VENV_NAME}"
+    "$PYTHON" -m venv "${VENV_NAME}"
     echo "仮想環境を作成しました: ${VENV_NAME}"
 fi
 source "${VENV_NAME}/bin/activate"
@@ -56,7 +79,7 @@ echo "仮想環境を有効化しました: $(which python3)"
 echo ""
 echo "--- 依存パッケージを確認中 ---"
 pip install -r requirements.txt
-pip install pyinstaller
+pip install pyinstaller markdown
 
 # 出力ディレクトリの作成
 mkdir -p "${OUTPUT_DIR}"
@@ -116,7 +139,19 @@ mkdir -p "${DIST_DIR}"
 
 cp "${OUTPUT_DIR}/${DMG_NAME}" "${DIST_DIR}/"
 cp -r examples "${DIST_DIR}/examples"
-cp README.md "${DIST_DIR}/"
+
+# README.md を HTML に変換
+echo "--- README.html を生成中 ---"
+python3 -c "
+import markdown
+with open('README.md', encoding='utf-8') as f:
+    md = f.read()
+html = markdown.markdown(md, extensions=['tables', 'fenced_code'])
+with open('${DIST_DIR}/README.html', 'w', encoding='utf-8') as f:
+    f.write('<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>メール一括送信ツール</title></head><body>\n')
+    f.write(html)
+    f.write('\n</body></html>')
+"
 
 # ZIP を作成
 (cd dist && zip -r "../${OUTPUT_DIR}/${ZIP_NAME}" "EmailBulkSender_mac_${ARCH_LABEL}")
@@ -132,5 +167,5 @@ echo ""
 echo "  ZIP の内容:"
 echo "    - ${DMG_NAME} （インストーラー）"
 echo "    - examples/ （サンプルファイル）"
-echo "    - README.md"
+echo "    - README.html"
 echo "=========================================="
