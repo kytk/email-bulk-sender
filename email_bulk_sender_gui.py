@@ -280,6 +280,7 @@ class RecipientListDialog(ctk.CTkToplevel):
         self.title(i18n.get('dialog_recipient_title'))
         self.geometry("650x450")
         self.transient(parent)
+        self.wait_visibility()
         self.grab_set()
 
         # 件数ラベル
@@ -337,6 +338,7 @@ class PreviewDialog(ctk.CTkToplevel):
         self.title(i18n.get('dialog_preview_title'))
         self.geometry("650x550")
         self.transient(parent)
+        self.wait_visibility()
         self.grab_set()
 
         # スクロール可能フレーム
@@ -401,6 +403,7 @@ class TestSendDialog(ctk.CTkToplevel):
         self.title(i18n.get('dialog_test_title'))
         self.geometry("480x230")
         self.transient(parent)
+        self.wait_visibility()
         self.grab_set()
 
         # 説明
