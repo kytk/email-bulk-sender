@@ -481,10 +481,11 @@ class TestSendDialog(ctk.CTkToplevel):
             )
 
             # SMTP送信
+            local_hostname = sender._get_safe_local_hostname()
             if sender.smtp_port == 465:
-                server = smtplib.SMTP_SSL(sender.smtp_server, sender.smtp_port)
+                server = smtplib.SMTP_SSL(sender.smtp_server, sender.smtp_port, local_hostname=local_hostname)
             else:
-                server = smtplib.SMTP(sender.smtp_server, sender.smtp_port)
+                server = smtplib.SMTP(sender.smtp_server, sender.smtp_port, local_hostname=local_hostname)
                 server.starttls()
             server.login(sender.email_address, sender.email_password)
             server.send_message(msg)
@@ -1061,10 +1062,11 @@ class EmailBulkSenderApp(ctk.CTk):
                 delay = 5.0
 
             # SMTP接続
+            local_hostname = sender._get_safe_local_hostname()
             if sender.smtp_port == 465:
-                server = smtplib.SMTP_SSL(sender.smtp_server, sender.smtp_port)
+                server = smtplib.SMTP_SSL(sender.smtp_server, sender.smtp_port, local_hostname=local_hostname)
             else:
-                server = smtplib.SMTP(sender.smtp_server, sender.smtp_port)
+                server = smtplib.SMTP(sender.smtp_server, sender.smtp_port, local_hostname=local_hostname)
                 server.starttls()
             server.login(sender.email_address, sender.email_password)
 

@@ -236,6 +236,16 @@ class EmailBulkSender:
         self.smtp_port = smtp_port
         self.sender_display_name = sender_display_name
     
+    def _get_safe_local_hostname(self) -> str:
+        """SMTP EHLO用の安全なローカルホスト名を取得（非ASCIIコンピュータ名対応）"""
+        import socket
+        fqdn = socket.getfqdn()
+        try:
+            fqdn.encode('ascii')
+            return fqdn
+        except UnicodeEncodeError:
+            return 'localhost'
+
     def read_recipients(self, csv_file, i18n=None):
         """
         CSVまたはExcelファイルから受信者リストを読み込む（文字コード自動検出）
@@ -420,7 +430,7 @@ class EmailBulkSender:
 
         # 送信元の設定（表示名がある場合は formataddr を使用）
         if self.sender_display_name:
-            msg['From'] = formataddr((self.sender_display_name, self.email_address))
+            msg['From'] = formataddr((str(Header(self.sender_display_name, 'utf-8')), self.email_address))
         else:
             msg['From'] = self.email_address
 
@@ -470,10 +480,11 @@ class EmailBulkSender:
                         part.set_payload(f.read())
                         encoders.encode_base64(part)
 
-                        # Content-Typeヘッダーにnameパラメータを追加
-                        part.set_param('name', filename)
+                        # Content-Typeヘッダーにnameパラメータを追加（日本語ファイル名対応）
+                        encoded_filename = str(Header(filename, 'utf-8'))
+                        part.set_param('name', encoded_filename)
                         # Content-Dispositionヘッダーを設定
-                        part.add_header('Content-Disposition', 'attachment', filename=filename)
+                        part.add_header('Content-Disposition', 'attachment', filename=encoded_filename)
                         msg.attach(part)
 
         return msg
@@ -547,10 +558,11 @@ class EmailBulkSender:
         # SMTP接続
         try:
             # ポート465はSSL、それ以外はTLSを使用
+            local_hostname = self._get_safe_local_hostname()
             if self.smtp_port == 465:
-                server = smtplib.SMTP_SSL(self.smtp_server, self.smtp_port)
+                server = smtplib.SMTP_SSL(self.smtp_server, self.smtp_port, local_hostname=local_hostname)
             else:
-                server = smtplib.SMTP(self.smtp_server, self.smtp_port)
+                server = smtplib.SMTP(self.smtp_server, self.smtp_port, local_hostname=local_hostname)
                 server.starttls()
 
             server.login(self.email_address, self.email_password)
