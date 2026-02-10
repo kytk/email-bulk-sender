@@ -64,6 +64,7 @@ credentials.json
 *secret*
 
 # Development docs (not for distribution)
+.claude/
 CLAUDE.md
 BUILD_GUIDE.md
 build_executables.bat
